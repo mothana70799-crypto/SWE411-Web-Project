@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Taskr — Create Account</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+<link rel="stylesheet" href="style.css?v=1777110565"/>
+</head>
+<body class="auth-body">
+
+<div class="auth-split">
+  <div class="auth-left d-none d-lg-flex">
+    <div class="auth-left-content">
+      <div class="app-wordmark mb-5">
+        <span class="wordmark-icon"><i class="bi bi-check2-circle"></i></span>
+        <span class="wordmark-text">Taskr</span>
+      </div>
+      <h2 class="auth-headline">Get organized<br/><span class="text-accent">today.</span></h2>
+      <p class="auth-sub">Join thousands of people who use Taskr to get more done, every single day.</p>
+      <div class="feature-pills mt-5">
+        <span class="pill"><i class="bi bi-person-circle"></i> Free forever</span>
+        <span class="pill"><i class="bi bi-stopwatch-fill"></i> Task timers</span>
+        <span class="pill"><i class="bi bi-bar-chart-fill"></i> Analytics</span>
+        <span class="pill"><i class="bi bi-kanban-fill"></i> Full CRUD</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-right">
+    <div class="auth-form-box">
+      <div class="app-wordmark mb-4 d-lg-none">
+        <span class="wordmark-icon"><i class="bi bi-check2-circle"></i></span>
+        <span class="wordmark-text">Taskr</span>
+      </div>
+      <h3 class="form-heading">Create account</h3>
+      <p class="form-sub mb-4">Start getting things done</p>
+
+      <div id="alert-box" class="alert d-none rounded-3" role="alert"></div>
+
+      <form id="reg-form" novalidate autocomplete="on">
+        <!-- Username -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold small" for="username">Username</label>
+          <div class="input-group input-group-lg custom-ig">
+            <span class="input-group-text"><i class="bi bi-person"></i></span>
+            <input type="text" class="form-control" id="username" name="username"
+                   placeholder="yourname" autocomplete="username" required/>
+          </div>
+          <div class="form-text text-muted ps-1">3–30 chars. Letters, numbers, underscores only.</div>
+          <div class="invalid-feedback ps-1" id="username-error"></div>
+        </div>
+
+        <!-- Email -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold small" for="email">Email address</label>
+          <div class="input-group input-group-lg custom-ig">
+            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+            <input type="email" class="form-control" id="email" name="email"
+                   placeholder="you@example.com" autocomplete="email" required/>
+          </div>
+          <div class="invalid-feedback ps-1" id="email-error"></div>
+        </div>
+
+        <!-- Password -->
+        <div class="mb-1">
+          <label class="form-label fw-semibold small" for="password">Password</label>
+          <div class="input-group input-group-lg custom-ig">
+            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+            <input type="password" class="form-control" id="password" name="password"
+                   placeholder="Min. 6 characters" autocomplete="new-password" required/>
+            <button class="input-group-text btn-eye" type="button" id="toggle-pw">
+              <i class="bi bi-eye"></i>
+            </button>
+          </div>
+          <div class="invalid-feedback ps-1" id="password-error"></div>
+        </div>
+
+        <!-- Strength bar -->
+        <div class="mb-3 px-1">
+          <div class="strength-bar mt-2"><div id="strength-fill" class="strength-fill"></div></div>
+          <div class="d-flex justify-content-between mt-1">
+            <small id="strength-label" class="text-muted"></small>
+            <small id="strength-hint" class="text-muted"></small>
+          </div>
+        </div>
+
+        <!-- Confirm password -->
+        <div class="mb-4">
+          <label class="form-label fw-semibold small" for="confirm">Confirm Password</label>
+          <div class="input-group input-group-lg custom-ig">
+            <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+            <input type="password" class="form-control" id="confirm" name="confirm"
+                   placeholder="Re-enter password" autocomplete="new-password" required/>
+          </div>
+          <div class="invalid-feedback ps-1" id="confirm-error"></div>
+        </div>
+
+        <button type="submit" class="btn btn-accent w-100 py-3 fw-semibold" id="reg-btn">
+          <span class="btn-label"><i class="bi bi-person-plus me-1"></i>Create account</span>
+          <span class="btn-spin d-none"><span class="spinner-border spinner-border-sm"></span> Creating…</span>
+        </button>
+      </form>
+
+      <hr class="my-4 divider"/>
+      <p class="text-center text-muted small">Already have an account?
+        <a href="index.html" class="link-accent fw-semibold">Sign in</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="validation.js?v=1777110565"></script>
+<script>
+if (localStorage.getItem('token')) location.href = 'todos.html';
+
+const { rules } = Validator;
+const usernameEl = document.getElementById('username');
+const emailEl    = document.getElementById('email');
+const passwordEl = document.getElementById('password');
+const confirmEl  = document.getElementById('confirm');
+const alertBox   = document.getElementById('alert-box');
+const regBtn     = document.getElementById('reg-btn');
+
+// ── Password strength ──────────────────────────────────────────────────────
+const strengthLevels = [
+  { label: 'Too short',  color: '#6b7280', hint: 'At least 6 characters' },
+  { label: 'Weak',       color: '#ef4444', hint: 'Add uppercase letters' },
+  { label: 'Fair',       color: '#f97316', hint: 'Add numbers or symbols' },
+  { label: 'Good',       color: '#eab308', hint: 'Add symbols for stronger' },
+  { label: 'Strong',     color: '#22c55e', hint: 'Great password!' },
+  { label: 'Very strong',color: '#16a34a', hint: '🔒 Excellent!' },
+];
+
+function calcStrength(pw) {
+  let s = 0;
+  if (pw.length >= 6)  s++;
+  if (pw.length >= 10) s++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) s++;
+  if (/[0-9]/.test(pw)) s++;
+  if (/[^A-Za-z0-9]/.test(pw)) s++;
+  return s;
+}
+
+passwordEl.addEventListener('input', function () {
+  const pw = this.value;
+  if (!pw) {
+    document.getElementById('strength-fill').style.cssText = 'width:0%';
+    document.getElementById('strength-label').textContent = '';
+    document.getElementById('strength-hint').textContent  = '';
+    return;
+  }
+  const score = calcStrength(pw);
+  const lv    = strengthLevels[score] || strengthLevels[0];
+  const pct   = Math.round((score / 5) * 100);
+  document.getElementById('strength-fill').style.cssText = `width:${pct}%;background:${lv.color}`;
+  document.getElementById('strength-label').textContent  = lv.label;
+  document.getElementById('strength-label').style.color  = lv.color;
+  document.getElementById('strength-hint').textContent   = lv.hint;
+  // Re-check confirm if filled
+  if (confirmEl.value) validateField(confirmEl, rules.required, () => confirmEl.value === passwordEl.value || 'Passwords do not match.');
+});
+
+// ── Password toggle ────────────────────────────────────────────────────────
+document.getElementById('toggle-pw').addEventListener('click', function () {
+  const isText = passwordEl.type === 'text';
+  passwordEl.type = isText ? 'password' : 'text';
+  this.querySelector('i').className = isText ? 'bi bi-eye' : 'bi bi-eye-slash';
+});
+
+// ── Live validation ────────────────────────────────────────────────────────
+const matchPw = () => confirmEl.value === passwordEl.value || 'Passwords do not match.';
+
+attachLiveValidation(usernameEl, rules.required, rules.minLen(3), rules.maxLen(30), rules.username);
+attachLiveValidation(emailEl,    rules.required, rules.email);
+attachLiveValidation(passwordEl, rules.required, rules.minLen(6), rules.maxLen(128));
+attachLiveValidation(confirmEl,  rules.required, matchPw);
+
+// ── Submit ─────────────────────────────────────────────────────────────────
+document.getElementById('reg-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  hideFormAlert(alertBox);
+
+  const ok1 = validateField(usernameEl, rules.required, rules.minLen(3), rules.maxLen(30), rules.username);
+  const ok2 = validateField(emailEl,    rules.required, rules.email);
+  const ok3 = validateField(passwordEl, rules.required, rules.minLen(6), rules.maxLen(128));
+  const ok4 = validateField(confirmEl,  rules.required, matchPw);
+  if (!ok1 || !ok2 || !ok3 || !ok4) return;
+
+  if (calcStrength(passwordEl.value) < 1) {
+    setFieldError(passwordEl, 'Password is too weak. Use at least 6 characters.');
+    return;
+  }
+
+  setLoading(regBtn, true);
+  try {
+    const res  = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: usernameEl.value.trim(), email: emailEl.value.trim(), password: passwordEl.value })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      applyServerErrors(data.errors, { username: usernameEl, email: emailEl, password: passwordEl }, alertBox);
+      if (!data.errors) showFormAlert(alertBox, 'danger', data.message || 'Registration failed.');
+    } else {
+      showFormAlert(alertBox, 'success', 'Account created! Redirecting to sign in…');
+      setTimeout(() => location.href = 'index.html', 1500);
+    }
+  } catch {
+    showFormAlert(alertBox, 'danger', 'Connection error. Please try again.');
+  } finally {
+    setLoading(regBtn, false);
+  }
+});
+</script>
+</body>
+</html>
