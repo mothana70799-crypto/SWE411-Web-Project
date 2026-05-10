@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Taskr — My Tasks</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body class="app-body">
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-top">
+    <div class="app-wordmark">
+      <span class="wordmark-icon"><i class="bi bi-check2-circle"></i></span>
+      <span class="wordmark-text">Taskr</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <a class="sidebar-link active" id="nav-tasks" href="#" onclick="showView('tasks');return false;"><i class="bi bi-list-task"></i><span>My Tasks</span></a>
+    <a class="sidebar-link" id="nav-analytics" href="#" onclick="showView('analytics');return false;"><i class="bi bi-bar-chart-line"></i><span>Analytics</span></a>
+  </nav>
+  <div class="sidebar-stats mt-3">
+    <div class="stat-card"><div class="stat-num" id="stat-total">0</div><div class="stat-lbl">Total</div></div>
+    <div class="stat-card"><div class="stat-num text-accent" id="stat-active">0</div><div class="stat-lbl">Active</div></div>
+    <div class="stat-card"><div class="stat-num text-success" id="stat-done">0</div><div class="stat-lbl">Done</div></div>
+  </div>
+  <div class="sidebar-user">
+    <div class="user-avatar-sm" id="sidebar-avatar"></div>
+    <div class="user-info">
+      <div class="user-name" id="sidebar-name"></div>
+      <div class="user-email" id="sidebar-email"></div>
+    </div>
+    <button class="btn-signout" onclick="logout()" title="Sign out"><i class="bi bi-box-arrow-right"></i></button>
+  </div>
+</aside>
+
+<main class="main-area">
+
+  <div class="topbar">
+    <button class="btn-hamburger d-lg-none" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+    <div class="topbar-title">
+      <h1 class="page-title" id="page-title">My Tasks</h1>
+      <span class="page-badge" id="page-badge">0 tasks</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-accent px-4" id="btn-new-task" onclick="openAddModal()">
+        <i class="bi bi-plus-lg me-1"></i>New Task
+      </button>
+    </div>
+  </div>
+
+  <div class="progress-wrap mx-4 mt-3">
+    <div class="d-flex justify-content-between mb-1">
+      <small class="text-muted">Overall completion</small>
+      <small class="fw-semibold" id="progress-pct">0%</small>
+    </div>
+    <div class="progress progress-custom">
+      <div class="progress-bar bg-accent" id="progress-bar" style="width:0%" role="progressbar"></div>
+    </div>
+  </div>
+
+  <div id="view-tasks">
+    <div class="filter-row mx-4 mt-4">
+      <div class="search-box">
+        <i class="bi bi-search"></i>
+        <input type="text" id="search-input" placeholder="Search tasks…" oninput="renderTodos()"/>
+      </div>
+      <div class="filter-chips">
+        <button class="chip active" data-f="all"       onclick="setFilter('all',this)">All</button>
+        <button class="chip"        data-f="active"    onclick="setFilter('active',this)">Active</button>
+        <button class="chip"        data-f="completed" onclick="setFilter('completed',this)">Done</button>
+        <button class="chip chip-danger" onclick="clearCompleted()"><i class="bi bi-trash3 me-1"></i>Clear done</button>
+      </div>
+      <select class="sort-sel" id="sort-sel" onchange="renderTodos()">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="priority">By priority</option>
+        <option value="due">By due date</option>
+      </select>
+    </div>
+    <div class="task-list-wrap mx-4 mt-3 pb-5" id="todo-list">
+      <div class="text-center py-5"><div class="spinner-border text-accent" role="status"></div></div>
+    </div>
+  </div>
+
+  <div id="view-analytics" class="d-none mx-4 mt-4 pb-5">
+    <div class="analytics-grid">
+
+      <div class="metrics-row">
+        <div class="metric-card">
+          <div class="metric-icon bg-accent-soft"><i class="bi bi-clipboard-check text-accent"></i></div>
+          <div>
+            <div class="metric-val" id="m-completion-rate">0%</div>
+            <div class="metric-lbl">Completion Rate</div>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon bg-success-soft"><i class="bi bi-calendar-check text-success"></i></div>
+          <div>
+            <div class="metric-val text-success" id="m-deadline-rate">0%</div>
+            <div class="metric-lbl">On-Time Delivery</div>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon bg-warn-soft"><i class="bi bi-exclamation-triangle text-warning"></i></div>
+          <div>
+            <div class="metric-val text-warning" id="m-overdue">0</div>
+            <div class="metric-lbl">Overdue Tasks</div>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon bg-purple-soft"><i class="bi bi-graph-up text-purple"></i></div>
+          <div>
+            <div class="metric-val text-purple" id="m-weekly-rate">0</div>
+            <div class="metric-lbl">Done This Week</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-title"><i class="bi bi-bar-chart-fill me-2 text-accent"></i>Production Rate</div>
+              <div class="chart-sub">Tasks completed per day (last 14 days)</div>
+            </div>
+            <span class="chart-badge" id="chart-production-badge">—</span>
+          </div>
+          <div class="chart-wrap"><canvas id="chart-production"></canvas></div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-title"><i class="bi bi-pie-chart-fill me-2 text-success"></i>Deadline Compliance</div>
+              <div class="chart-sub">On-time vs overdue vs no deadline</div>
+            </div>
+            <span class="chart-badge chart-badge-success" id="chart-compliance-badge">—</span>
+          </div>
+          <div class="chart-wrap chart-wrap-doughnut"><canvas id="chart-compliance"></canvas></div>
+          <div class="doughnut-legend" id="doughnut-legend"></div>
+        </div>
+      </div>
+
+      <div class="chart-card chart-card-full">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-title"><i class="bi bi-layers-fill me-2 text-warning"></i>Priority Breakdown</div>
+            <div class="chart-sub">Task distribution by priority level — completed vs active</div>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chart-priority"></canvas></div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<div class="modal fade" id="taskModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content modal-custom">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold" id="taskModalLabel"><i class="bi bi-plus-circle me-2 text-accent"></i>New Task</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body pt-3">
+        <div id="modal-alert" class="alert d-none rounded-3"></div>
+
+        <div class="row g-3" id="modal-form">
+          <div class="col-12">
+            <label class="form-label fw-semibold small text-muted">TITLE <span class="text-danger">*</span></label>
+            <input type="text" class="form-control modal-input" id="m-title"
+                   placeholder="What needs to be done?" maxlength="200"/>
+            <div class="d-flex justify-content-between">
+              <div class="invalid-feedback" id="m-title-error"></div>
+              <small class="text-muted ms-auto mt-1" id="m-title-count">0 / 200</small>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label fw-semibold small text-muted">DESCRIPTION</label>
+            <textarea class="form-control modal-input" id="m-desc" rows="3"
+                      placeholder="Optional details or notes…" maxlength="1000"></textarea>
+            <div class="d-flex justify-content-end">
+              <small class="text-muted mt-1" id="m-desc-count">0 / 1000</small>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label fw-semibold small text-muted">PRIORITY <span class="text-danger">*</span></label>
+            <select class="form-select modal-input" id="m-priority">
+              <option value="">Select priority…</option>
+              <option value="low">🟢 Low</option>
+              <option value="medium">🟡 Medium</option>
+              <option value="high">🔴 High</option>
+            </select>
+            <div class="invalid-feedback" id="m-priority-error"></div>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label fw-semibold small text-muted">DUE DATE</label>
+            <input type="date" class="form-control modal-input" id="m-due"/>
+            <div class="invalid-feedback" id="m-due-error"></div>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label fw-semibold small text-muted">TIMER (minutes)</label>
+            <div class="input-group custom-ig">
+              <span class="input-group-text"><i class="bi bi-stopwatch"></i></span>
+              <input type="number" class="form-control modal-input" id="m-timer"
+                     min="1" max="480" placeholder="1–480"/>
+            </div>
+            <div class="invalid-feedback" id="m-timer-error"></div>
+            <div class="form-text text-muted">Leave blank for no timer.</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-accent px-5" id="modal-save-btn" onclick="saveTask()">
+          <span class="btn-label"><i class="bi bi-check2 me-1"></i>Save Task</span>
+          <span class="btn-spin d-none"><span class="spinner-border spinner-border-sm"></span> Saving…</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="timerModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content modal-custom text-center">
+      <div class="modal-header border-0 pb-0 position-relative">
+        <h5 class="modal-title w-100 fw-bold"><i class="bi bi-stopwatch-fill me-2 text-accent"></i>Task Timer</h5>
+        <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body py-4">
+        <div class="timer-title-modal mb-2" id="timer-modal-title"></div>
+        <div class="timer-clock" id="timer-modal-clock">00:00</div>
+        <div class="timer-ring-wrap my-3">
+          <svg class="timer-ring" viewBox="0 0 120 120">
+            <circle class="timer-ring-bg" cx="60" cy="60" r="52"/>
+            <circle class="timer-ring-fill" id="timer-ring-fill" cx="60" cy="60" r="52" style="stroke-dasharray:326.7;stroke-dashoffset:0"/>
+          </svg>
+        </div>
+        <div class="d-flex justify-content-center gap-2 mt-3">
+          <button class="btn btn-accent px-4" id="timer-toggle-btn" onclick="toggleTimer()"><i class="bi bi-play-fill me-1"></i>Start</button>
+          <button class="btn btn-outline-secondary px-3" onclick="resetTimer()" title="Reset"><i class="bi bi-arrow-counterclockwise"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sidebar-overlay d-lg-none" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="validation.js"></script>
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════════════════════════════════════
+const TOKEN = localStorage.getItem('token');
+if (!TOKEN) location.href = 'index.html';
+const USER = JSON.parse(localStorage.getItem('user') || '{}');
+document.getElementById('sidebar-avatar').textContent = (USER.username || 'U')[0].toUpperCase();
+document.getElementById('sidebar-name').textContent   = USER.username || 'User';
+document.getElementById('sidebar-email').textContent  = USER.email    || '';
+
+// ══════════════════════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════════════════════
+let todos         = [];
+let currentFilter = 'all';
+let editingId     = null;
+let taskModal, timerModal;
+let chartProduction = null, chartCompliance = null, chartPriority = null;
+
+// Timer state
+let timerTaskId   = null, timerTotal = 0, timerRemaining = 0;
+let timerRunning  = false, timerInterval = null;
+const CIRCUMFERENCE = 2 * Math.PI * 52;
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  taskModal  = new bootstrap.Modal(document.getElementById('taskModal'));
+  timerModal = new bootstrap.Modal(document.getElementById('timerModal'));
+
+  // Character counters
+  document.getElementById('m-title').addEventListener('input', function () {
+    document.getElementById('m-title-count').textContent = `${this.value.length} / 200`;
+    if (this.value.trim().length > 0) validateModalField('title');
+  });
+  document.getElementById('m-desc').addEventListener('input', function () {
+    document.getElementById('m-desc-count').textContent = `${this.value.length} / 1000`;
+  });
+  document.getElementById('m-priority').addEventListener('change', () => validateModalField('priority'));
+  document.getElementById('m-due').addEventListener('change',      () => validateModalField('due'));
+  document.getElementById('m-timer').addEventListener('input',     () => validateModalField('timer'));
+
+  // Set today as min date for due date picker
+  document.getElementById('m-due').min = new Date().toISOString().split('T')[0];
+
+  loadTodos();
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// API
+// ══════════════════════════════════════════════════════════════════════════════
+const api = (path, opts = {}) =>
+  fetch('/api' + path, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN, ...(opts.headers || {}) }
+  }).then(r => { if (r.status === 401) logout(); return r; });
+
+async function loadTodos() {
+  try {
+    const r = await api('/todos');
+    todos   = await r.json();
+    renderTodos();
+    if (document.getElementById('view-analytics').classList.contains('d-none') === false)
+      renderCharts();
+  } catch { showToast('Failed to load tasks', 'danger'); }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// VIEWS
+// ══════════════════════════════════════════════════════════════════════════════
+function showView(view) {
+  const isAnalytics = view === 'analytics';
+  document.getElementById('view-tasks').classList.toggle('d-none', isAnalytics);
+  document.getElementById('view-analytics').classList.toggle('d-none', !isAnalytics);
+  document.getElementById('btn-new-task').classList.toggle('d-none', isAnalytics);
+  document.getElementById('nav-tasks').classList.toggle('active', !isAnalytics);
+  document.getElementById('nav-analytics').classList.toggle('active', isAnalytics);
+  document.getElementById('page-title').textContent = isAnalytics ? 'Analytics' : 'My Tasks';
+  document.getElementById('page-badge').textContent = isAnalytics ? 'Insights' : `${todos.length} task${todos.length !== 1 ? 's' : ''}`;
+  if (isAnalytics) renderCharts();
+  toggleSidebarClose();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RENDER TASKS
+// ══════════════════════════════════════════════════════════════════════════════
+function renderTodos() {
+  const q    = document.getElementById('search-input').value.toLowerCase();
+  const sort = document.getElementById('sort-sel').value;
+  const prioOrd = { high: 0, medium: 1, low: 2 };
+
+  let list = todos.filter(t => {
+    const mF = currentFilter === 'all' ? true : currentFilter === 'active' ? !t.isCompleted : t.isCompleted;
+    const mQ = t.title.toLowerCase().includes(q) || (t.description || '').toLowerCase().includes(q);
+    return mF && mQ;
+  });
+
+  if      (sort === 'oldest')   list.sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
+  else if (sort === 'priority') list.sort((a,b) => prioOrd[a.priority] - prioOrd[b.priority]);
+  else if (sort === 'due')      list.sort((a,b) => !a.dueDate ? 1 : !b.dueDate ? -1 : new Date(a.dueDate) - new Date(b.dueDate));
+  else                          list.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  // Stats
+  const total = todos.length, done = todos.filter(t => t.isCompleted).length;
+  document.getElementById('stat-total').textContent  = total;
+  document.getElementById('stat-active').textContent = total - done;
+  document.getElementById('stat-done').textContent   = done;
+  document.getElementById('page-badge').textContent  = `${list.length} task${list.length !== 1 ? 's' : ''}`;
+  const pct = total ? Math.round(done / total * 100) : 0;
+  document.getElementById('progress-pct').textContent = pct + '%';
+  document.getElementById('progress-bar').style.width = pct + '%';
+
+  if (!list.length) {
+    document.getElementById('todo-list').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon"><i class="bi bi-inbox"></i></div>
+        <h5>${q ? 'No tasks match your search' : currentFilter === 'completed' ? 'No completed tasks yet' : 'No tasks yet!'}</h5>
+        <p class="text-muted">${q || currentFilter !== 'all' ? 'Try a different filter' : 'Click "New Task" to get started'}</p>
+      </div>`;
+    return;
+  }
+
+  document.getElementById('todo-list').innerHTML = list.map(t => {
+    const prioMap = { high: ['danger','High'], medium: ['warning','Med'], low: ['success','Low'] };
+    const [pc, pl] = prioMap[t.priority] || ['secondary', t.priority];
+    const dueStr   = t.dueDate ? formatDate(t.dueDate) : '';
+    const dueCls_  = t.dueDate && !t.isCompleted ? dueCls(t.dueDate) : '';
+    const hasTimer = t.timerMinutes > 0;
+    const timerRunningNow = timerTaskId === t.id && timerRunning;
+    const st       = getTimerState(t.id);
+    const remSecs  = timerTaskId === t.id ? timerRemaining : (st ? st.remaining : (t.timerMinutes || 0) * 60);
+
+    return `
+    <div class="task-card ${t.isCompleted ? 'task-done' : ''} priority-border-${t.priority}" id="card-${t.id}">
+      <div class="task-card-body">
+        <div class="task-check-col">
+          <button class="task-checkbox ${t.isCompleted ? 'checked' : ''}" onclick="toggleTodo(${t.id})" title="Mark ${t.isCompleted ? 'incomplete' : 'complete'}">
+            ${t.isCompleted ? '<i class="bi bi-check-lg"></i>' : ''}
+          </button>
+        </div>
+        <div class="task-content">
+          <div class="task-title ${t.isCompleted ? 'strikethrough' : ''}">${esc(t.title)}</div>
+          ${t.description ? `<div class="task-desc">${esc(t.description)}</div>` : ''}
+          <div class="task-meta mt-2">
+            <span class="badge bg-${pc} bg-opacity-15 text-${pc} border border-${pc} border-opacity-25">${pl}</span>
+            ${dueStr ? `<span class="meta-chip ${dueCls_}"><i class="bi bi-calendar3 me-1"></i>${dueStr}</span>` : ''}
+            ${hasTimer ? `
+            <button class="meta-chip timer-chip ${timerRunningNow ? 'timer-chip-running' : ''}" onclick="openTimer(${t.id})" title="Open timer">
+              <i class="bi bi-stopwatch me-1"></i>${fmtTime(remSecs)}
+              ${timerRunningNow ? '<span class="timer-pulse"></span>' : ''}
+            </button>` : ''}
+          </div>
+        </div>
+        <div class="task-actions">
+          ${hasTimer ? `<button class="action-btn action-btn-timer ${timerRunningNow ? 'running' : ''}" onclick="openTimer(${t.id})" title="Timer"><i class="bi bi-stopwatch-fill"></i></button>` : ''}
+          <button class="action-btn" onclick="openEditModal(${t.id})" title="Edit"><i class="bi bi-pencil"></i></button>
+          <button class="action-btn action-btn-del" onclick="deleteTodo(${t.id})" title="Delete"><i class="bi bi-trash3"></i></button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CRUD
+// ══════════════════════════════════════════════════════════════════════════════
+async function toggleTodo(id) {
+  try {
+    await api(`/todos/${id}/toggle`, { method: 'PATCH' });
+    const t = todos.find(t => t.id === id);
+    if (t) t.isCompleted = !t.isCompleted;
+    renderTodos();
+  } catch { showToast('Failed to update task', 'danger'); }
+}
+
+async function deleteTodo(id) {
+  if (!confirm('Delete this task?')) return;
+  try {
+    await api(`/todos/${id}`, { method: 'DELETE' });
+    todos = todos.filter(t => t.id !== id);
+    clearTimerState(id);
+    if (timerTaskId === id) stopTimerHard();
+    renderTodos();
+    showToast('Task deleted', 'success');
+  } catch { showToast('Failed to delete', 'danger'); }
+}
+
+async function clearCompleted() {
+  const cnt = todos.filter(t => t.isCompleted).length;
+  if (!cnt) { showToast('No completed tasks to clear', 'warning'); return; }
+  if (!confirm(`Remove ${cnt} completed task${cnt > 1 ? 's' : ''}?`)) return;
+  try {
+    await api('/todos/completed', { method: 'DELETE' });
+    todos = todos.filter(t => !t.isCompleted);
+    renderTodos();
+    showToast(`${cnt} task${cnt > 1 ? 's' : ''} cleared`, 'success');
+  } catch { showToast('Failed to clear tasks', 'danger'); }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODAL VALIDATION
+// ══════════════════════════════════════════════════════════════════════════════
+function validateModalField(field) {
+  const { rules } = Validator;
+  const today = new Date().toISOString().split('T')[0];
+
+  if (field === 'title') {
+    const el  = document.getElementById('m-title');
+    const err = Validator.run(el.value, rules.required, rules.minLen(2), rules.maxLen(200));
+    if (err) { el.classList.add('is-invalid'); el.classList.remove('is-valid'); document.getElementById('m-title-error').textContent = err; return false; }
+    el.classList.remove('is-invalid'); el.classList.add('is-valid'); document.getElementById('m-title-error').textContent = ''; return true;
+  }
+  if (field === 'priority') {
+    const el  = document.getElementById('m-priority');
+    const err = Validator.run(el.value, rules.priority);
+    if (err) { el.classList.add('is-invalid'); el.classList.remove('is-valid'); document.getElementById('m-priority-error').textContent = err; return false; }
+    el.classList.remove('is-invalid'); el.classList.add('is-valid'); document.getElementById('m-priority-error').textContent = ''; return true;
+  }
+  if (field === 'due') {
+    const el  = document.getElementById('m-due');
+    if (!el.value) { el.classList.remove('is-invalid','is-valid'); document.getElementById('m-due-error').textContent = ''; return true; }
+    const err = el.value < today ? 'Due date cannot be in the past.' : null;
+    if (err) { el.classList.add('is-invalid'); el.classList.remove('is-valid'); document.getElementById('m-due-error').textContent = err; return false; }
+    el.classList.remove('is-invalid'); el.classList.add('is-valid'); document.getElementById('m-due-error').textContent = ''; return true;
+  }
+  if (field === 'timer') {
+    const el  = document.getElementById('m-timer');
+    if (!el.value) { el.classList.remove('is-invalid','is-valid'); document.getElementById('m-timer-error').textContent = ''; return true; }
+    const v   = parseInt(el.value);
+    const err = isNaN(v) || v < 1 ? 'Minimum 1 minute.' : v > 480 ? 'Maximum 480 minutes.' : null;
+    if (err) { el.classList.add('is-invalid'); el.classList.remove('is-valid'); document.getElementById('m-timer-error').textContent = err; return false; }
+    el.classList.remove('is-invalid'); el.classList.add('is-valid'); document.getElementById('m-timer-error').textContent = ''; return true;
+  }
+  return true;
+}
+
+function validateModalAll() {
+  return ['title','priority','due','timer'].map(validateModalField).every(Boolean);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODAL OPEN / SAVE
+// ══════════════════════════════════════════════════════════════════════════════
+function resetModal() {
+  ['m-title','m-desc','m-priority','m-due','m-timer'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('is-invalid','is-valid');
+    el.value = '';
+  });
+  document.getElementById('m-priority').value = '';
+  document.getElementById('m-title-count').textContent = '0 / 200';
+  document.getElementById('m-desc-count').textContent  = '0 / 1000';
+  hideFormAlert(document.getElementById('modal-alert'));
+}
+
+function openAddModal() {
+  editingId = null;
+  resetModal();
+  document.getElementById('taskModalLabel').innerHTML = '<i class="bi bi-plus-circle me-2 text-accent"></i>New Task';
+  document.getElementById('m-priority').value = 'medium';
+  taskModal.show();
+  setTimeout(() => document.getElementById('m-title').focus(), 350);
+}
+
+function openEditModal(id) {
+  const t = todos.find(x => x.id === id);
+  if (!t) return;
+  editingId = id;
+  resetModal();
+  document.getElementById('taskModalLabel').innerHTML = '<i class="bi bi-pencil me-2 text-accent"></i>Edit Task';
+  document.getElementById('m-title').value    = t.title;
+  document.getElementById('m-desc').value     = t.description || '';
+  document.getElementById('m-priority').value = t.priority;
+  document.getElementById('m-due').value      = t.dueDate ? t.dueDate.split('T')[0] : '';
+  document.getElementById('m-timer').value    = t.timerMinutes || '';
+  document.getElementById('m-title-count').textContent = `${t.title.length} / 200`;
+  document.getElementById('m-desc-count').textContent  = `${(t.description||'').length} / 1000`;
+  taskModal.show();
+  setTimeout(() => document.getElementById('m-title').focus(), 350);
+}
+
+async function saveTask() {
+  hideFormAlert(document.getElementById('modal-alert'));
+  if (!validateModalAll()) {
+    showFormAlert(document.getElementById('modal-alert'), 'warning', 'Please fix the errors above before saving.');
+    return;
+  }
+
+  const body = {
+    title:        document.getElementById('m-title').value.trim(),
+    description:  document.getElementById('m-desc').value.trim() || null,
+    priority:     document.getElementById('m-priority').value,
+    dueDate:      document.getElementById('m-due').value || null,
+    timerMinutes: parseInt(document.getElementById('m-timer').value) || null,
+    isCompleted:  editingId ? (todos.find(t => t.id === editingId)?.isCompleted || false) : false
+  };
+
+  setLoading(document.getElementById('modal-save-btn'), true);
+  try {
+    if (editingId) {
+      const r = await api(`/todos/${editingId}`, { method: 'PUT', body: JSON.stringify(body) });
+      if (!r.ok) {
+        const d = await r.json();
+        applyServerModalErrors(d.errors);
+        showFormAlert(document.getElementById('modal-alert'), 'danger', d.message || 'Failed to save.');
+        return;
+      }
+      const updated = await r.json();
+      const idx = todos.findIndex(t => t.id === editingId);
+      if (idx !== -1) todos[idx] = updated;
+      clearTimerState(editingId);
+      if (timerTaskId === editingId) stopTimerHard();
+      showToast('Task updated ✓', 'success');
+    } else {
+      const r = await api('/todos', { method: 'POST', body: JSON.stringify(body) });
+      if (!r.ok) {
+        const d = await r.json();
+        applyServerModalErrors(d.errors);
+        showFormAlert(document.getElementById('modal-alert'), 'danger', d.message || 'Failed to create.');
+        return;
+      }
+      todos.unshift(await r.json());
+      showToast('Task created ✓', 'success');
+    }
+    taskModal.hide();
+    renderTodos();
+  } catch { showFormAlert(document.getElementById('modal-alert'), 'danger', 'Network error. Please try again.'); }
+  finally  { setLoading(document.getElementById('modal-save-btn'), false); }
+}
+
+function applyServerModalErrors(errors = {}) {
+  const map = { title: 'm-title', priority: 'm-priority', dueDate: 'm-due', timerMinutes: 'm-timer' };
+  for (const [key, msg] of Object.entries(errors)) {
+    const elId = map[key];
+    if (elId) {
+      const el = document.getElementById(elId);
+      el.classList.add('is-invalid');
+      const errEl = document.getElementById(elId + '-error');
+      if (errEl) errEl.textContent = msg;
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TIMER
+// ══════════════════════════════════════════════════════════════════════════════
+function getTimerState(id)        { try { return JSON.parse(localStorage.getItem(`timer_${id}`)); } catch { return null; } }
+function saveTimerState(id, st)   { localStorage.setItem(`timer_${id}`, JSON.stringify(st)); }
+function clearTimerState(id)      { localStorage.removeItem(`timer_${id}`); }
+
+function openTimer(id) {
+  const t = todos.find(x => x.id === id);
+  if (!t || !t.timerMinutes) return;
+  if (timerTaskId && timerTaskId !== id && timerRunning) {
+    clearInterval(timerInterval); timerRunning = false;
+    saveTimerState(timerTaskId, { remaining: timerRemaining, total: timerTotal });
+  }
+  timerTaskId = id; timerTotal = t.timerMinutes * 60;
+  const st = getTimerState(id);
+  timerRemaining = st ? st.remaining : timerTotal;
+  timerRunning   = false; clearInterval(timerInterval);
+  document.getElementById('timer-modal-title').textContent = t.title;
+  updateTimerUI();
+  document.getElementById('timer-toggle-btn').innerHTML = '<i class="bi bi-play-fill me-1"></i>Start';
+  timerModal.show();
+}
+
+function toggleTimer() {
+  if (timerRunning) {
+    clearInterval(timerInterval); timerRunning = false;
+    saveTimerState(timerTaskId, { remaining: timerRemaining, total: timerTotal });
+    document.getElementById('timer-toggle-btn').innerHTML = '<i class="bi bi-play-fill me-1"></i>Resume';
+    renderTodos();
+  } else {
+    if (timerRemaining <= 0) { resetTimer(); return; }
+    timerRunning = true;
+    document.getElementById('timer-toggle-btn').innerHTML = '<i class="bi bi-pause-fill me-1"></i>Pause';
+    timerInterval = setInterval(() => {
+      timerRemaining--;
+      updateTimerUI(); renderTodos();
+      if (timerRemaining <= 0) {
+        clearInterval(timerInterval); timerRunning = false;
+        clearTimerState(timerTaskId);
+        document.getElementById('timer-toggle-btn').innerHTML = '<i class="bi bi-check2 me-1"></i>Done!';
+        showToast('⏰ Timer finished!', 'success');
+        renderTodos();
+      }
+    }, 1000);
+    renderTodos();
+  }
+}
+
+function resetTimer() {
+  clearInterval(timerInterval); timerRunning = false;
+  timerRemaining = timerTotal; clearTimerState(timerTaskId);
+  updateTimerUI();
+  document.getElementById('timer-toggle-btn').innerHTML = '<i class="bi bi-play-fill me-1"></i>Start';
+  renderTodos();
+}
+
+function stopTimerHard() {
+  clearInterval(timerInterval); timerRunning = false; timerTaskId = null;
+}
+
+function updateTimerUI() {
+  document.getElementById('timer-modal-clock').textContent = fmtTime(timerRemaining);
+  const pct    = timerTotal > 0 ? timerRemaining / timerTotal : 1;
+  const offset = CIRCUMFERENCE * (1 - pct);
+  const fill   = document.getElementById('timer-ring-fill');
+  if (fill) { fill.style.strokeDashoffset = offset; fill.style.stroke = pct > .5 ? 'var(--accent)' : pct > .2 ? '#f59e0b' : '#ef4444'; }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ANALYTICS CHARTS
+// ══════════════════════════════════════════════════════════════════════════════
+function computeAnalytics() {
+  const now  = new Date();
+  const done = todos.filter(t => t.isCompleted);
+
+  // ── Production rate: completions per day for last 14 days ──
+  const days    = 14;
+  const labels  = [], prodData = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d   = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().split('T')[0];
+    labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+    // Count todos created on that day (proxy for production since we don't store completedAt)
+    prodData.push(todos.filter(t => t.createdAt && t.createdAt.split('T')[0] === key).length);
+  }
+
+  // ── Deadline compliance ──
+  const withDue   = todos.filter(t => t.dueDate);
+  const onTime    = withDue.filter(t => t.isCompleted && new Date(t.dueDate) >= now).length
+                  + withDue.filter(t => !t.isCompleted && new Date(t.dueDate) >= now).length; // not yet overdue
+  const overdue   = withDue.filter(t => new Date(t.dueDate) < now && !t.isCompleted).length;
+  const completed = withDue.filter(t => t.isCompleted).length;
+  const noDue     = todos.filter(t => !t.dueDate).length;
+
+  // ── Priority breakdown ──
+  const priorities = ['high','medium','low'];
+  const prioActive = priorities.map(p => todos.filter(t => t.priority === p && !t.isCompleted).length);
+  const prioDone   = priorities.map(p => todos.filter(t => t.priority === p &&  t.isCompleted).length);
+
+  // ── Metrics ──
+  const total      = todos.length;
+  const totalDone  = done.length;
+  const compRate   = total ? Math.round(totalDone / total * 100) : 0;
+  const withDueCnt = withDue.length;
+  const deadlineOk = withDueCnt ? Math.round((withDueCnt - overdue) / withDueCnt * 100) : 0;
+  const weekAgo    = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+  const weeklyDone = todos.filter(t => t.isCompleted && new Date(t.createdAt) >= weekAgo).length;
+
+  return { labels, prodData, onTime, overdue, completed, noDue, prioActive, prioDone, compRate, deadlineOk, weeklyDone, withDueCnt };
+}
+
+Chart.defaults.color = '#9195a5';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+Chart.defaults.font.family = "'Outfit', sans-serif";
+
+function renderCharts() {
+  const a = computeAnalytics();
+
+  // ── Metrics ──
+  document.getElementById('m-completion-rate').textContent = a.compRate + '%';
+  document.getElementById('m-deadline-rate').textContent   = a.deadlineOk + '%';
+  document.getElementById('m-overdue').textContent         = a.overdue;
+  document.getElementById('m-weekly-rate').textContent     = a.weeklyDone;
+
+  // ── Production bar chart ──
+  const avgProd = a.prodData.length ? (a.prodData.reduce((s,v) => s+v,0) / a.prodData.length).toFixed(1) : 0;
+  document.getElementById('chart-production-badge').textContent = `Avg ${avgProd}/day`;
+
+  if (chartProduction) chartProduction.destroy();
+  chartProduction = new Chart(document.getElementById('chart-production'), {
+    type: 'bar',
+    data: {
+      labels: a.labels,
+      datasets: [{
+        label: 'Tasks created',
+        data: a.prodData,
+        backgroundColor: a.prodData.map((v,i) =>
+          i === a.prodData.length - 1 ? 'rgba(99,102,241,.9)' : 'rgba(99,102,241,.4)'),
+        borderColor: 'rgba(99,102,241,1)',
+        borderWidth: 0,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} task${ctx.parsed.y !== 1 ? 's' : ''}` } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { maxTicksLimit: 7, font: { size: 11 } } },
+        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      }
+    }
+  });
+
+  // ── Deadline doughnut ──
+  const total = a.completed + a.overdue + a.noDue;
+  const dlPct = a.withDueCnt > 0 ? Math.round((a.withDueCnt - a.overdue) / a.withDueCnt * 100) : 0;
+  document.getElementById('chart-compliance-badge').textContent = `${dlPct}% on time`;
+
+  const dLabels = ['Completed w/ deadline','Overdue','No deadline'];
+  const dData   = [a.completed, a.overdue, a.noDue];
+  const dColors = ['rgba(34,197,94,.8)','rgba(239,68,68,.8)','rgba(99,102,241,.5)'];
+
+  if (chartCompliance) chartCompliance.destroy();
+  chartCompliance = new Chart(document.getElementById('chart-compliance'), {
+    type: 'doughnut',
+    data: { labels: dLabels, datasets: [{ data: dData, backgroundColor: dColors, borderColor: '#1e2130', borderWidth: 3, hoverOffset: 6 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '68%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed}` } }
+      }
+    }
+  });
+
+  // Legend
+  document.getElementById('doughnut-legend').innerHTML = dLabels.map((l,i) =>
+    `<div class="legend-item"><span class="legend-dot" style="background:${dColors[i]}"></span><span>${l}</span><strong>${dData[i]}</strong></div>`
+  ).join('');
+
+  // ── Priority grouped bar ──
+  if (chartPriority) chartPriority.destroy();
+  chartPriority = new Chart(document.getElementById('chart-priority'), {
+    type: 'bar',
+    data: {
+      labels: ['🔴 High','🟡 Medium','🟢 Low'],
+      datasets: [
+        { label: 'Active',    data: a.prioActive, backgroundColor: 'rgba(99,102,241,.55)',  borderRadius: 6, borderSkipped: false },
+        { label: 'Completed', data: a.prioDone,   backgroundColor: 'rgba(34,197,94,.65)',   borderRadius: 6, borderSkipped: false },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { usePointStyle: true, padding: 20 } },
+        tooltip: { mode: 'index', intersect: false }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════════════════════
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.chip[data-f]').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderTodos();
+}
+
+function logout() {
+  localStorage.removeItem('token'); localStorage.removeItem('user');
+  location.href = 'index.html';
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('show');
+}
+function toggleSidebarClose() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+}
+
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function formatDate(d) { return new Date(d).toLocaleDateString('en-US', { month:'short', day:'numeric' }); }
+function dueCls(dueDate) { const d=(new Date(dueDate)-Date.now())/86400000; return d<0?'overdue':d<=2?'due-soon':''; }
+function fmtTime(s) { if(s<0)s=0; return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
+
+function showToast(msg, type = 'success') {
+  const id   = 'toast-' + Date.now();
+  const icons = { success:'bi-check-circle-fill', danger:'bi-x-circle-fill', warning:'bi-exclamation-triangle-fill' };
+  const el   = document.createElement('div');
+  el.className = `toast align-items-center text-bg-${type} border-0 show`;
+  el.id = id;
+  el.innerHTML = `<div class="d-flex"><div class="toast-body"><i class="bi ${icons[type]||''} me-2"></i>${msg}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="document.getElementById('${id}').remove()"></button></div>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el?.remove(), 3500);
+}
+</script>
+</body>
+</html>
